@@ -1,0 +1,31 @@
+{
+  "name": "@snipp-gg/snipp-js",
+  "version": "1.0.0",
+  "description": "Node.js API wrapper for Snipp",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "main": "src/index.js",
+  "files": [
+    "src"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "snipp",
+    "api",
+    "upload",
+    "file-sharing"
+  ],
+  "homepage": "https://docs.snipp.gg/concepts/sdks",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/snipp-gg/snipp-js"
+  },
+  "bugs": {
+    "url": "https://github.com/snipp-gg/snipp-js/issues"
+  },
+  "license": "MIT"
+}
