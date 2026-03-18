@@ -1,6 +1,6 @@
 # @snipp-gg/snipp
 
-A lightweight Node.js wrapper for the [Snipp API](https://api.snipp.gg). Zero dependencies -- uses native `fetch`.
+A lightweight Node.js wrapper for the [Snipp API](https://api.snipp.gg).
 
 ## Install
 
