@@ -1,6 +1,6 @@
 {
-  "name": "@snipp-gg/snipp-js",
-  "version": "1.0.0",
+  "name": "@snipp-gg/snipp",
+  "version": "1.0.1",
   "description": "Node.js API wrapper for Snipp",
   "type": "module",
   "exports": {
