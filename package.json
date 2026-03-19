@@ -14,12 +14,14 @@
     "node": ">=18.0.0"
   },
   "keywords": [
-    "snipp",
-    "api",
+    "clips",
     "upload",
-    "file-sharing"
+    "snipp",
+    "images",
+    "share",
+    "api"
   ],
-  "homepage": "https://docs.snipp.gg/concepts/sdks",
+  "homepage": "https://docs.snipp.gg/sdks/node",
   "repository": {
     "type": "git",
     "url": "https://github.com/snipp-gg/snipp-js"
