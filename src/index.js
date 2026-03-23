@@ -14,6 +14,13 @@ const BASE_URL = 'https://api.snipp.gg';
  */
 
 /**
+ * @typedef {Object} EditUploadOptions
+ * @property {string} [title] - New title (max 30 chars). Empty string to clear.
+ * @property {string} [description] - New description (max 200 chars). Empty string to clear.
+ * @property {'public'|'unlisted'|'private'} [privacy] - New privacy setting.
+ */
+
+/**
  * @typedef {Object} UploadOptions
  * @property {'public'|'unlisted'|'private'} [privacy] - Post privacy setting.
  * @property {string} [filename] - Filename sent with the upload (defaults to `'upload'`).
@@ -92,6 +99,15 @@ export class SnippClient {
   }
 
   /**
+   * Get a post by its share code.
+   * @param {string} code - The share code of the post.
+   * @returns {Promise<any>}
+   */
+  async getPost(code) {
+    return this.#request(`/posts/${encodeURIComponent(code)}`);
+  }
+
+  /**
    * Upload a file.
    * @param {File|Blob|Buffer|Uint8Array} file - The file to upload.
    * @param {UploadOptions} [options]
@@ -127,6 +143,31 @@ export class SnippClient {
    */
   async listUploads() {
     return this.#request('/uploads');
+  }
+
+  /**
+   * Edit an existing upload.
+   * @param {string} code - The share code of the upload to edit.
+   * @param {EditUploadOptions} options - Fields to update.
+   * @returns {Promise<any>}
+   */
+  async editUpload(code, options = {}) {
+    const headers = { code };
+
+    if (options.title !== undefined) {
+      headers['title'] = options.title;
+    }
+    if (options.description !== undefined) {
+      headers['description'] = options.description;
+    }
+    if (options.privacy !== undefined) {
+      headers['postprivacy'] = options.privacy;
+    }
+
+    return this.#request('/editUpload', {
+      method: 'PATCH',
+      headers,
+    });
   }
 
   /**
