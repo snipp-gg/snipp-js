@@ -206,7 +206,7 @@ export class SnippClient {
    * @returns {Promise<{ blocked: boolean }>}
    */
   async blockUser(targetId) {
-    return this.#request('/blocks', {
+    return this.#request('/block', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ targetId }),
@@ -219,8 +219,8 @@ export class SnippClient {
    * @returns {Promise<{ blocked: boolean }>}
    */
   async unblockUser(targetId) {
-    return this.#request('/blocks', {
-      method: 'DELETE',
+    return this.#request('/unblock', {
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ targetId }),
     });
