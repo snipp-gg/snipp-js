@@ -26,6 +26,49 @@ const BASE_URL = 'https://api.snipp.gg';
  * @property {string} [filename] - Filename sent with the upload (defaults to `'upload'`).
  */
 
+/**
+ * @typedef {Object} FileDimensions
+ * @property {number} width
+ * @property {number} height
+ */
+
+/**
+ * @typedef {Object} FileInfo
+ * @property {number} size - File size in bytes.
+ * @property {string} size_formatted - Human-readable file size (e.g. `"2.50 MB"`).
+ * @property {string} mime_type - MIME type (e.g. `"image/png"`).
+ * @property {FileDimensions} [dimensions] - Image dimensions (only for images/GIFs).
+ */
+
+/**
+ * @typedef {Object} UploadResponse
+ * @property {string} message
+ * @property {string} url - Direct URL to the uploaded file.
+ * @property {FileInfo} file - File metadata.
+ * @property {number} processing_time - Server-side processing time in milliseconds.
+ * @property {{ code: string, url: string, postPrivacy: string }} [post] - Post metadata.
+ */
+
+/**
+ * @typedef {Object} UploadEntry
+ * @property {string} url
+ * @property {number} size - File size in bytes.
+ * @property {string} size_formatted - Human-readable file size.
+ * @property {string} uploaded - ISO 8601 timestamp.
+ */
+
+/**
+ * @typedef {Object} PostDetail
+ * @property {string} code
+ * @property {string|null} url - Direct URL to the file.
+ * @property {string|null} title
+ * @property {string|null} description
+ * @property {string} postPrivacy
+ * @property {string|null} created - ISO 8601 timestamp.
+ * @property {FileInfo} [file] - File metadata.
+ * @property {boolean} [moderated] - Only present for the owner if the post was moderated.
+ */
+
 export class SnippClient {
   /** @type {string} */
   #apiKey;
@@ -101,7 +144,7 @@ export class SnippClient {
   /**
    * Get a post by its share code.
    * @param {string} code - The share code of the post.
-   * @returns {Promise<any>}
+   * @returns {Promise<{ post: PostDetail }>}
    */
   async getPost(code) {
     return this.#request(`/posts/${encodeURIComponent(code)}`);
@@ -111,7 +154,7 @@ export class SnippClient {
    * Upload a file.
    * @param {File|Blob|Buffer|Uint8Array} file - The file to upload.
    * @param {UploadOptions} [options]
-   * @returns {Promise<any>}
+   * @returns {Promise<UploadResponse>}
    */
   async upload(file, options = {}) {
     const formData = new FormData();
@@ -139,7 +182,7 @@ export class SnippClient {
 
   /**
    * List recent uploads for the authenticated user.
-   * @returns {Promise<any>}
+   * @returns {Promise<{ uploads: UploadEntry[] }>}
    */
   async listUploads() {
     return this.#request('/uploads');
