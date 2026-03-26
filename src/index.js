@@ -170,7 +170,7 @@ export class SnippClient {
 
     const headers = {};
     if (options.privacy) {
-      headers['postprivacy'] = options.privacy;
+      headers['post-privacy'] = options.privacy;
     }
 
     return this.#request('/upload', {
@@ -204,7 +204,7 @@ export class SnippClient {
       headers['description'] = options.description;
     }
     if (options.privacy !== undefined) {
-      headers['postprivacy'] = options.privacy;
+      headers['post-privacy'] = options.privacy;
     }
 
     return this.#request('/editUpload', {
