@@ -69,7 +69,7 @@ console.log(result.url);
 
 ### `client.listUploads()`
 
-List recent uploads for the authenticated user.
+List recent uploads for the authenticated user. Each item includes the upload URL, size metadata, the associated post `code` when one exists, and `isAlbum` when that upload belongs to an album post.
 
 ```js
 const uploads = await client.listUploads();

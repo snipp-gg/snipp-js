@@ -51,6 +51,8 @@ const BASE_URL = 'https://api.snipp.gg';
 
 /**
  * @typedef {Object} UploadEntry
+ * @property {string|null} [code] - Associated share code when a post exists.
+ * @property {boolean} isAlbum - Whether the upload belongs to an album post.
  * @property {string} url
  * @property {number} size - File size in bytes.
  * @property {string} size_formatted - Human-readable file size.
@@ -61,6 +63,8 @@ const BASE_URL = 'https://api.snipp.gg';
  * @typedef {Object} PostDetail
  * @property {string} code
  * @property {string|null} url - Direct URL to the file.
+ * @property {string[]} [urls] - Direct URLs for album files.
+ * @property {boolean} [isAlbum] - Whether this post is an album.
  * @property {string|null} title
  * @property {string|null} description
  * @property {string} postPrivacy
