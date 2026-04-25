@@ -218,6 +218,47 @@ export class SnippClient {
   }
 
   /**
+   * Append 1 or more files to an existing album post. The post's share code,
+   * privacy, title, and description are preserved. Albums cap at 9 files total;
+   * requests that would exceed the cap are rejected. New files inherit the
+   * post's privacy — returned URLs are signed with a 24-hour expiry for
+   * private posts.
+   *
+   * @param {string} code - The share code of the post to append to.
+   * @param {Array<File|Blob|Buffer|Uint8Array>} files - 1 or more files to append.
+   * @param {{ filenames?: string[] }} [options] - Optional filenames (one per file in `files`).
+   * @returns {Promise<any>}
+   */
+  async appendUpload(code, files, options = {}) {
+    if (!code || typeof code !== 'string') {
+      throw new Error('code must be a non-empty string.');
+    }
+    if (!Array.isArray(files) || files.length === 0) {
+      throw new Error('files must be a non-empty array.');
+    }
+
+    const formData = new FormData();
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const filename = options.filenames?.[i] ?? 'upload';
+
+      if (file instanceof Blob) {
+        formData.append('file', file, file.name ?? filename);
+      } else if (file instanceof Uint8Array || (typeof Buffer !== 'undefined' && Buffer.isBuffer(file))) {
+        formData.append('file', new Blob([file]), filename);
+      } else {
+        throw new Error(`files[${i}] must be a File, Blob, Buffer, or Uint8Array.`);
+      }
+    }
+
+    return this.#request('/appendUpload', {
+      method: 'POST',
+      headers: { 'post-code': code },
+      body: formData,
+    });
+  }
+
+  /**
    * Delete an upload by filename.
    * @param {string} filename - The filename of the upload to delete.
    * @returns {Promise<any>}
