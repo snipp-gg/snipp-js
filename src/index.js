@@ -24,6 +24,9 @@ const BASE_URL = 'https://api.snipp.gg';
  * @typedef {Object} UploadOptions
  * @property {'public'|'unlisted'|'private'} [privacy] - Post privacy setting.
  * @property {string} [filename] - Filename sent with the upload (defaults to `'upload'`).
+ * @property {string} [title] - Optional post title (max 30 chars).
+ * @property {string} [description] - Optional post description (max 200 chars).
+ * @property {'album'|'individual'} [postType] - `album` (default) or `individual`. Only applies when uploading two or more files.
  */
 
 /**
@@ -175,6 +178,15 @@ export class SnippClient {
     const headers = {};
     if (options.privacy) {
       headers['post-privacy'] = options.privacy;
+    }
+    if (options.title !== undefined) {
+      headers['post-title'] = options.title;
+    }
+    if (options.description !== undefined) {
+      headers['post-description'] = options.description;
+    }
+    if (options.postType !== undefined) {
+      headers['post-type'] = options.postType;
     }
 
     return this.#request('/upload', {
