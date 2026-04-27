@@ -284,48 +284,6 @@ export class SnippClient {
     });
   }
 
-  /**
-   * Browse public uploads.
-   * @returns {Promise<any>}
-   */
-  async discover() {
-    return this.#request('/discover');
-  }
-
-  /**
-   * List blocked users.
-   * @returns {Promise<{ blocks: Array<{ userId: string, created: string }> }>}
-   */
-  async listBlocks() {
-    return this.#request('/blocks');
-  }
-
-  /**
-   * Block a user.
-   * @param {string} targetId - The ID of the user to block.
-   * @returns {Promise<{ blocked: boolean }>}
-   */
-  async blockUser(targetId) {
-    return this.#request('/block', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ targetId }),
-    });
-  }
-
-  /**
-   * Unblock a user.
-   * @param {string} targetId - The ID of the user to unblock.
-   * @returns {Promise<{ blocked: boolean }>}
-   */
-  async unblockUser(targetId) {
-    return this.#request('/unblock', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ targetId }),
-    });
-  }
-
   async reportPost(code, reason = '') {
     return this.#request('/reports', {
       method: 'POST',
