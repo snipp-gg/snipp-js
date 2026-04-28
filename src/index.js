@@ -198,10 +198,15 @@ export class SnippClient {
 
   /**
    * List recent uploads for the authenticated user.
+   * @param {object} [options]
+   * @param {number} [options.limit] - Maximum uploads to return (1-1000).
    * @returns {Promise<{ uploads: UploadEntry[] }>}
    */
-  async listUploads() {
-    return this.#request('/uploads');
+  async listUploads(options = {}) {
+    const params = new URLSearchParams();
+    if (options.limit !== undefined) params.set('limit', String(options.limit));
+    const qs = params.toString();
+    return this.#request(`/uploads${qs ? `?${qs}` : ''}`);
   }
 
   /**
