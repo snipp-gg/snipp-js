@@ -180,10 +180,10 @@ export class SnippClient {
       headers['post-privacy'] = options.privacy;
     }
     if (options.title !== undefined) {
-      headers['post-title'] = options.title;
+      formData.append('post-title', options.title);
     }
     if (options.description !== undefined) {
-      headers['post-description'] = options.description;
+      formData.append('post-description', options.description);
     }
     if (options.postType !== undefined) {
       headers['post-type'] = options.postType;
@@ -290,7 +290,7 @@ export class SnippClient {
   }
 
   async reportPost(code, reason = '') {
-    return this.#request('/reports', {
+    return this.#request('/report', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ code, reason }),
