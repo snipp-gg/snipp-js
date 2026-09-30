@@ -1,10 +1,20 @@
 import { SnippError } from './errors.js';
 
 const BASE_URL = 'https://api.snipp.gg';
+const REGIONS = ['eu-west-1', 'us-west-1'];
+const PRIVACY_VALUES = ['public', 'unlisted', 'private'];
+const POST_TYPES = ['album', 'individual'];
+
+function assertPrivacy(privacy) {
+  if (privacy !== undefined && !PRIVACY_VALUES.includes(privacy)) {
+    throw new Error(`Unknown privacy setting. Expected one of: ${PRIVACY_VALUES.join(', ')}`);
+  }
+}
 
 /**
  * @typedef {Object} SnippClientOptions
- * @property {string} apiKey - Your Snipp API key (starts with `snp_`).
+ * @property {string} apiKey - Your Snipp API key.
+ * @property {'eu-west-1'|'us-west-1'} [region] - Pin requests to a regional endpoint. Uploads run at the same speed either way; this controls which region stores your files. Omit to use `api.snipp.gg`.
  */
 
 /**
@@ -22,11 +32,11 @@ const BASE_URL = 'https://api.snipp.gg';
 
 /**
  * @typedef {Object} UploadOptions
- * @property {'public'|'unlisted'|'private'} [privacy] - Post privacy setting.
+ * @property {'public'|'unlisted'|'private'} [privacy] - Post privacy setting. Defaults to the server default (`private`) when omitted.
  * @property {string} [filename] - Filename sent with the upload (defaults to `'upload'`).
  * @property {string} [title] - Optional post title (max 30 chars).
  * @property {string} [description] - Optional post description (max 200 chars).
- * @property {'album'|'individual'} [postType] - `album` (default) or `individual`. Only applies when uploading two or more files.
+ * @property {'album'|'individual'} [postType] - Sent as the `post-type` header. Has no effect through `upload()`, which sends a single file; use `appendUpload` to build an album.
  */
 
 /**
@@ -49,17 +59,20 @@ const BASE_URL = 'https://api.snipp.gg';
  * @property {string} url - Direct URL to the uploaded file.
  * @property {FileInfo} file - File metadata.
  * @property {number} processing_time - Server-side processing time in milliseconds.
- * @property {{ code: string, url: string, postPrivacy: string }} [post] - Post metadata.
+ * @property {{ code: string, url: string, post_privacy: string, priority: boolean, is_album?: boolean, file_count?: number }} [post] - Post metadata. `is_album` and `file_count` are present on album posts.
  */
 
 /**
  * @typedef {Object} UploadEntry
  * @property {string|null} [code] - Associated share code when a post exists.
- * @property {boolean} isAlbum - Whether the upload belongs to an album post.
+ * @property {boolean} is_album - Whether the upload belongs to an album post.
  * @property {string} url
+ * @property {string} [thumbnail_url] - Video thumbnail URL, when one exists.
+ * @property {string|null} title - Post title.
  * @property {number} size - File size in bytes.
  * @property {string} size_formatted - Human-readable file size.
  * @property {string} uploaded - ISO 8601 timestamp.
+ * @property {boolean} priority - Whether the post uses priority (adaptive) streaming.
  */
 
 /**
@@ -67,28 +80,42 @@ const BASE_URL = 'https://api.snipp.gg';
  * @property {string} code
  * @property {string|null} url - Direct URL to the file.
  * @property {string[]} [urls] - Direct URLs for album files.
- * @property {boolean} [isAlbum] - Whether this post is an album.
+ * @property {boolean} [is_album] - Whether this post is an album.
+ * @property {Array<{ index: number, file_name: string, url: string, width?: number, height?: number, mime_type?: string, size?: number, size_formatted?: string }>} [files] - Every file in the post, in order.
+ * @property {string} [thumbnail_url] - Video thumbnail URL, when one exists.
  * @property {string|null} title
  * @property {string|null} description
- * @property {string} postPrivacy
+ * @property {string} post_privacy
  * @property {string|null} created - ISO 8601 timestamp.
+ * @property {number} views - Total view count.
+ * @property {number} [like_count] - Total likes. Omitted on team posts, which cannot be liked.
+ * @property {number} comment_count - Total comments.
+ * @property {boolean} priority - Whether the post uses priority (adaptive) streaming.
  * @property {FileInfo} [file] - File metadata.
  * @property {boolean} [moderated] - Only present for the owner if the post was moderated.
+ * @property {boolean} [restricted] - Only present for the owner if the post was restricted.
  */
 
 export class SnippClient {
   /** @type {string} */
   #apiKey;
 
+  /** @type {string} */
+  #baseUrl;
+
   /**
    * Create a new Snipp API client.
    * @param {SnippClientOptions} options
    */
-  constructor({ apiKey }) {
+  constructor({ apiKey, region }) {
     if (!apiKey) {
       throw new Error('An API key is required.');
     }
+    if (region !== undefined && !REGIONS.includes(region)) {
+      throw new Error(`Unknown region. Expected one of: ${REGIONS.join(', ')}`);
+    }
     this.#apiKey = apiKey;
+    this.#baseUrl = region ? `https://${region}.api.snipp.gg` : BASE_URL;
   }
 
   /**
@@ -98,7 +125,7 @@ export class SnippClient {
    * @returns {Promise<any>}
    */
   async #request(path, options = {}) {
-    const url = `${BASE_URL}${path}`;
+    const url = `${this.#baseUrl}${path}`;
 
     const headers = {
       'api-key': this.#apiKey,
@@ -109,13 +136,14 @@ export class SnippClient {
 
     if (!response.ok) {
       let message;
+      let body = null;
       try {
-        const body = await response.json();
-        message = body.message || body.error || response.statusText;
+        body = await response.json();
+        message = body.error || body.message || response.statusText;
       } catch {
         message = response.statusText;
       }
-      throw new SnippError(message, response.status);
+      throw new SnippError(message, response.status, body);
     }
 
     const contentType = response.headers.get('content-type');
@@ -136,10 +164,10 @@ export class SnippClient {
     const params = new URLSearchParams();
 
     if (options.includePosts !== undefined) {
-      params.set('includePosts', String(options.includePosts));
+      params.set('include_posts', String(options.includePosts));
     }
     if (options.postsLimit !== undefined) {
-      params.set('postsLimit', String(options.postsLimit));
+      params.set('posts_limit', String(options.postsLimit));
     }
 
     const query = params.toString();
@@ -149,7 +177,8 @@ export class SnippClient {
   }
 
   /**
-   * Get a post by its share code.
+   * Get a post by its share code. Team posts are only readable by members of
+   * that team, and omit `like_count`.
    * @param {string} code - The share code of the post.
    * @returns {Promise<{ post: PostDetail }>}
    */
@@ -164,6 +193,11 @@ export class SnippClient {
    * @returns {Promise<UploadResponse>}
    */
   async upload(file, options = {}) {
+    assertPrivacy(options.privacy);
+    if (options.postType !== undefined && !POST_TYPES.includes(options.postType)) {
+      throw new Error(`Unknown post type. Expected one of: ${POST_TYPES.join(', ')}`);
+    }
+
     const formData = new FormData();
     const filename = options.filename ?? 'upload';
 
@@ -180,10 +214,10 @@ export class SnippClient {
       headers['post-privacy'] = options.privacy;
     }
     if (options.title !== undefined) {
-      formData.append('post-title', options.title);
+      formData.append('title', options.title);
     }
     if (options.description !== undefined) {
-      formData.append('post-description', options.description);
+      formData.append('description', options.description);
     }
     if (options.postType !== undefined) {
       headers['post-type'] = options.postType;
@@ -216,13 +250,16 @@ export class SnippClient {
    * @returns {Promise<any>}
    */
   async editUpload(code, options = {}) {
+    assertPrivacy(options.privacy);
+
     const headers = { code };
+    const formData = new FormData();
 
     if (options.title !== undefined) {
-      headers['title'] = options.title;
+      formData.append('title', options.title);
     }
     if (options.description !== undefined) {
-      headers['description'] = options.description;
+      formData.append('description', options.description);
     }
     if (options.privacy !== undefined) {
       headers['post-privacy'] = options.privacy;
@@ -231,14 +268,15 @@ export class SnippClient {
     return this.#request('/editUpload', {
       method: 'PATCH',
       headers,
+      body: formData,
     });
   }
 
   /**
    * Append 1 or more files to an existing album post. The post's share code,
-   * privacy, title, and description are preserved. Albums cap at 9 files total;
+   * privacy, title, and description are preserved. Albums cap at 50 files total;
    * requests that would exceed the cap are rejected. New files inherit the
-   * post's privacy — returned URLs are signed with a 24-hour expiry for
+   * post's privacy; returned URLs are signed with a 24-hour expiry for
    * private posts.
    *
    * @param {string} code - The share code of the post to append to.
@@ -289,8 +327,14 @@ export class SnippClient {
     });
   }
 
+  /**
+   * Report a post.
+   * @param {string} code - The share code of the post to report.
+   * @param {string} [reason] - Optional reason for the report (max 200 chars).
+   * @returns {Promise<any>}
+   */
   async reportPost(code, reason = '') {
-    return this.#request('/report', {
+    return this.#request('/report-post', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ code, reason }),
